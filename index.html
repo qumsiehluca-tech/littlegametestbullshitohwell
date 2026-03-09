@@ -160,9 +160,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <hr class="setting-divider">
     <div class="setting-row">
       <div class="setting-label">PLAYER COLOR</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-        ${['#00aaff','#ff6b35','#4CAF50','#E91E63','#FFD700','#9C27B0','#ffffff'].map(c=>`<div onclick="setPlayerColor('${c}')" style="width:24px;height:24px;background:${c};border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color 0.15s;" class="color-swatch" data-color="${c}"></div>`).join('')}
-      </div>
+      <div id="colorSwatches" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"></div>
     </div>
     <button class="btn btn-orange" style="margin-top:4px;" onclick="showScreen('menuScreen')">← BACK</button>
   </div>
@@ -317,8 +315,22 @@ function setPlayerColor(c){
     s.style.borderColor = s.dataset.color===c ? '#fff' : 'transparent';
   });
 }
-// Init swatch border
-setTimeout(()=>setPlayerColor(settings.playerColor),50);
+// Render color swatches via JS (template literals don't work in static HTML)
+const PLAYER_COLORS = ['#00aaff','#ff6b35','#4CAF50','#E91E63','#FFD700','#9C27B0','#ffffff'];
+function renderSwatches(){
+  const container = document.getElementById('colorSwatches');
+  if(!container) return;
+  container.innerHTML = '';
+  PLAYER_COLORS.forEach(c => {
+    const d = document.createElement('div');
+    d.onclick = () => setPlayerColor(c);
+    d.style.cssText = `width:24px;height:24px;background:${c};border-radius:4px;cursor:pointer;border:2px solid ${c===settings.playerColor?'#fff':'transparent'};transition:border-color 0.15s;`;
+    d.dataset.color = c;
+    d.className = 'color-swatch';
+    container.appendChild(d);
+  });
+}
+setTimeout(()=>{ renderSwatches(); setPlayerColor(settings.playerColor); }, 50);
 
 // sens → acceleration: range 1-10 maps to 0.35–1.6
 function getSensAccel(){ return 0.35 + (settings.sens-1)*(1.6-0.35)/9; }
@@ -334,6 +346,7 @@ function showScreen(id){
   document.getElementById('hud').style.display='none';
   document.getElementById('gameWrap').style.display='none';
   document.getElementById('controls').style.display='none';
+  document.getElementById('gameOverlay').style.display='none';
 }
 showScreen('authScreen');
 
@@ -381,11 +394,11 @@ let difficulty='easy', gameRunning=false;
 let deaths=0, sessionLevels=0, sessionStart=0, elapsed=0;
 let cameraX=0, platforms=[], WORLD_WIDTH=2000, particles=[];
 
-const player={x:60,y:280,w:26,h:34,vx:0,vy:0,onGround:false,jumpsLeft:2,dead:false,color:'#00aaff',eyeDir:1,iceSlide:false};
+const player={x:60,y:280,w:26,h:34,vx:0,vy:0,onGround:false,jumpsLeft:2,dead:false,won:false,color:'#00aaff',eyeDir:1,iceSlide:false};
 
 function resetPlayer(){
   player.x=60;player.y=260;player.vx=0;player.vy=0;
-  player.onGround=false;player.jumpsLeft=2;player.dead=false;player.iceSlide=false;
+  player.onGround=false;player.jumpsLeft=2;player.dead=false;player.won=false;player.iceSlide=false;
   player.color=settings.playerColor;
 }
 
@@ -481,7 +494,7 @@ function collides(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y
 
 // ── Update ───────────────────────────────────────────
 function update(){
-  if(!gameRunning||player.dead) return;
+  if(!gameRunning||player.dead||player.won) return;
   elapsed=(Date.now()-sessionStart)/1000;
   document.getElementById('timer').textContent=elapsed.toFixed(1);
 
@@ -528,7 +541,7 @@ function update(){
   if(player.x<0){player.x=0;player.vx=0;}
 
   const finish=platforms.find(p=>p.finish);
-  if(finish&&collides(player,finish)&&player.y+player.h<=finish.y+10) win();
+  if(finish&&!player.won&&collides(player,finish)&&player.y+player.h<=finish.y+10) win();
 
   const smooth=getCamSmooth();
   cameraX+=(player.x-220-cameraX)*smooth;
@@ -539,33 +552,39 @@ function update(){
 }
 
 function die(){
-  if(player.dead) return;
+  if(player.dead||player.won) return;
   player.dead=true;
   deaths++;
   document.getElementById('deaths').textContent=deaths;
   spawnP(player.x+player.w/2,player.y+player.h/2,'#ff4444',22,{s:9,u:10});
+  const deathTime=Date.now();
   setTimeout(()=>{
+    // Offset sessionStart so dead time doesn't count
+    const pausedMs=Date.now()-deathTime;
+    sessionStart+=pausedMs;
     resetPlayer();
-    player.dead=false;
     platforms=generateLevel(difficulty);
     cameraX=0;
   },600);
 }
 
 function win(){
+  player.won=true;
+  const winTime=elapsed; // freeze at this exact moment
   sessionLevels++;
   document.getElementById('levelsHud').textContent=sessionLevels;
-  const entry=submitScore(sessionLevels, elapsed, difficulty);
+  const entry=submitScore(sessionLevels, winTime, difficulty);
   const scoreNum=entry?entry.score:0;
   spawnP(player.x+player.w/2,player.y,'#FFD700',30,{s:12,u:14,sz:7});
   const ov=document.getElementById('gameOverlay');
-  ov.style.display='flex';
+  ov.style.cssText='position:absolute;top:0;left:0;width:800px;height:480px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,0.75);border-radius:3px;z-index:10;';
   const cfg=DIFF_CFG[difficulty];
+  const multLabel=cfg.label==='EASY'?'1.0':cfg.label==='MEDIUM'?'2.5':'5.0';
   ov.innerHTML=`
     <h2 style="color:var(--gold)">🏆 LEVEL COMPLETE!</h2>
     <div class="score-reveal">+${scoreNum.toLocaleString()} pts</div>
-    <p style="font-size:7px;color:#888">${elapsed.toFixed(1)}s · ${sessionLevels} level${sessionLevels>1?'s':''} · ${cfg.label}</p>
-    <p style="font-size:7px;color:#555">formula: (${sessionLevels} ÷ ${elapsed.toFixed(1)}s) × 1000 × ${cfg.label==='EASY'?'1.0':cfg.label==='MEDIUM'?'2.5':'5.0'}</p>
+    <p style="font-size:7px;color:#888">${winTime.toFixed(1)}s · ${sessionLevels} level${sessionLevels>1?'s':''} · ${cfg.label}</p>
+    <p style="font-size:7px;color:#555">formula: (${sessionLevels} ÷ ${winTime.toFixed(1)}s) × 1000 × ${multLabel}</p>
     <div style="display:flex;gap:10px;margin-top:6px;">
       <button class="btn btn-orange" onclick="nextLevel()">NEXT LEVEL →</button>
       <button class="btn btn-ghost" onclick="escapeToMenu()">↩ MENU</button>
@@ -575,7 +594,7 @@ function win(){
 function nextLevel(){
   document.getElementById('gameOverlay').style.display='none';
   platforms=generateLevel(difficulty);
-  resetPlayer();
+  resetPlayer(); // resets player.won too
   cameraX=0;
   particles=[];
 }
