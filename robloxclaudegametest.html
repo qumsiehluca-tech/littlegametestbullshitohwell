@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OBBY.GG</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --orange:#ff6b35;--gold:#FFD700;--green:#4CAF50;
+  --red:#f44336;--blue:#00aaff;--purple:#9C27B0;
+  --bg:#0a0a18;--panel:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+}
+body{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Press Start 2P',monospace;overflow:hidden;color:#fff;}
+
+/* ── SCREENS ───────────────────────────────────────── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(10,10,24,0.97);z-index:20;padding:20px;}
+.screen.hidden{display:none;}
+
+/* ── AUTH SCREEN ────────────────────────────────────── */
+#authScreen h1{font-size:28px;color:var(--orange);text-shadow:0 0 30px rgba(255,107,53,0.6),4px 4px #000;letter-spacing:2px;margin-bottom:4px;}
+#authScreen .tagline{font-size:7px;color:#555;letter-spacing:3px;margin-bottom:10px;}
+.auth-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px 28px;display:flex;flex-direction:column;gap:12px;width:300px;}
+.auth-box h2{font-size:10px;color:#aaa;text-align:center;margin-bottom:4px;}
+.auth-box input{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:5px;padding:10px 12px;color:#fff;outline:none;transition:border-color 0.2s;}
+.auth-box input:focus{border-color:var(--orange);}
+.auth-box input::placeholder{color:#333;}
+.btn{font-family:'Press Start 2P',monospace;font-size:8px;padding:10px 16px;border:2px solid currentColor;background:transparent;cursor:pointer;border-radius:5px;transition:background 0.15s,transform 0.1s,box-shadow 0.15s;color:#fff;letter-spacing:1px;}
+.btn:hover{background:rgba(255,255,255,0.08);transform:translateY(-1px);}
+.btn:active{transform:translateY(0);}
+.btn-orange{color:var(--orange);border-color:var(--orange);}
+.btn-orange:hover{background:rgba(255,107,53,0.15);box-shadow:0 0 20px rgba(255,107,53,0.3);}
+.btn-ghost{color:#555;border-color:#333;font-size:7px;padding:7px 12px;}
+.btn-ghost:hover{color:#aaa;border-color:#555;background:transparent;}
+.auth-err{font-size:7px;color:var(--red);text-align:center;min-height:14px;}
+.auth-toggle{font-size:7px;color:#444;text-align:center;cursor:pointer;transition:color 0.2s;}
+.auth-toggle:hover{color:#888;}
+.auth-toggle span{color:var(--orange);text-decoration:underline;}
+
+/* ── MENU SCREEN ────────────────────────────────────── */
+#menuScreen{gap:14px;}
+#menuScreen h1{font-size:24px;color:var(--orange);text-shadow:0 0 30px rgba(255,107,53,0.5),3px 3px #000;}
+.menu-user{font-size:8px;color:#888;margin-top:-8px;}
+.menu-user span{color:var(--gold);}
+.diff-row{display:flex;gap:12px;margin-top:4px;}
+.diff-btn{font-family:'Press Start 2P',monospace;font-size:9px;padding:12px 20px;border:2px solid currentColor;background:transparent;cursor:pointer;border-radius:5px;transition:all 0.15s;text-align:center;}
+.diff-btn .sub{font-size:6px;opacity:0.7;margin-top:5px;font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;}
+.diff-btn.easy{color:var(--green);}
+.diff-btn.medium{color:#FF9800;}
+.diff-btn.hard{color:var(--red);}
+.diff-btn:hover{transform:scale(1.05);}
+.diff-btn.easy:hover{background:rgba(76,175,80,0.15);box-shadow:0 0 20px rgba(76,175,80,0.2);}
+.diff-btn.medium:hover{background:rgba(255,152,0,0.15);box-shadow:0 0 20px rgba(255,152,0,0.2);}
+.diff-btn.hard:hover{background:rgba(244,67,54,0.15);box-shadow:0 0 20px rgba(244,67,54,0.2);}
+.menu-bottom{display:flex;gap:10px;margin-top:4px;}
+
+/* ── SETTINGS PANEL ─────────────────────────────────── */
+#settingsScreen .settings-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px 28px;width:360px;display:flex;flex-direction:column;gap:18px;}
+#settingsScreen h2{font-size:11px;color:var(--orange);text-align:center;margin-bottom:4px;}
+.setting-row{display:flex;flex-direction:column;gap:8px;}
+.setting-label{font-size:8px;color:#aaa;display:flex;justify-content:space-between;}
+.setting-label span{color:var(--gold);}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--orange);border-radius:50%;cursor:pointer;box-shadow:0 0 8px rgba(255,107,53,0.5);}
+.setting-divider{border:none;border-top:1px solid var(--border);}
+
+/* ── LEADERBOARD ────────────────────────────────────── */
+#lbScreen .lb-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px 24px;width:400px;max-height:340px;overflow-y:auto;}
+#lbScreen h2{font-size:11px;color:var(--gold);margin-bottom:16px;text-align:center;}
+.lb-tabs{display:flex;gap:8px;margin-bottom:12px;}
+.lb-tab{font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 10px;border:1px solid #333;border-radius:4px;cursor:pointer;color:#555;background:transparent;transition:all 0.15s;}
+.lb-tab.active{color:var(--orange);border-color:var(--orange);}
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:'Rajdhani',sans-serif;}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{font-size:11px;font-weight:700;color:#555;width:24px;text-align:center;}
+.lb-rank.gold{color:var(--gold);}
+.lb-rank.silver{color:#aaa;}
+.lb-rank.bronze{color:#cd7f32;}
+.lb-name{flex:1;font-size:14px;font-weight:600;color:#ddd;}
+.lb-name.you{color:var(--orange);}
+.lb-score{font-size:13px;font-weight:700;color:var(--gold);}
+.lb-diff{font-size:10px;color:#555;font-weight:600;}
+.lb-empty{font-family:'Rajdhani',sans-serif;font-size:13px;color:#444;text-align:center;padding:20px;}
+
+/* ── GAME CANVAS WRAPPER ────────────────────────────── */
+#gameWrap{position:relative;display:none;}
+#gameCanvas{border:2px solid rgba(255,107,53,0.4);border-radius:4px;box-shadow:0 0 40px rgba(255,107,53,0.2);}
+
+/* ── IN-GAME HUD ─────────────────────────────────────── */
+#hud{display:none;font-size:8px;margin-bottom:8px;display:flex;gap:12px;align-items:center;}
+#hud .hud-item{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);padding:5px 10px;border-radius:4px;}
+#hud .hud-user{color:var(--orange);}
+
+/* ── GAME OVERLAY ────────────────────────────────────── */
+#gameOverlay{position:absolute;top:0;left:0;width:800px;height:480px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,0,0,0.75);border-radius:3px;z-index:10;}
+#gameOverlay h2{font-size:20px;text-shadow:3px 3px #000;}
+#gameOverlay .score-reveal{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--gold);}
+#gameOverlay .sub{font-size:7px;color:#666;}
+.blink{animation:blink 1s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── SCROLLBAR ───────────────────────────────────────── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ════════ AUTH SCREEN ════════ -->
+<div class="screen" id="authScreen">
+  <h1>OBBY.GG</h1>
+  <p class="tagline">RANDOMIZED · COMPETITIVE · FREE</p>
+  <div class="auth-box">
+    <h2 id="authTitle">LOGIN</h2>
+    <input id="authUser" type="text" placeholder="username" maxlength="20" autocomplete="off">
+    <input id="authPass" type="password" placeholder="password" maxlength="40">
+    <div class="auth-err" id="authErr"></div>
+    <button class="btn btn-orange" onclick="submitAuth()">ENTER</button>
+    <p class="auth-toggle" onclick="toggleAuthMode()">no account? <span id="authToggleText">register here</span></p>
+  </div>
+</div>
+
+<!-- ════════ MENU SCREEN ════════ -->
+<div class="screen hidden" id="menuScreen">
+  <h1>OBBY.GG</h1>
+  <p class="menu-user">playing as <span id="menuUsername">—</span></p>
+  <p style="font-size:7px;color:#555;">score: <span id="menuScore" style="color:var(--gold)">0</span> &nbsp;|&nbsp; levels: <span id="menuLevels" style="color:#aaa">0</span></p>
+  <div class="diff-row">
+    <button class="diff-btn easy" onclick="startGame('easy')">EASY<div class="sub">×1.0 MULTIPLIER</div></button>
+    <button class="diff-btn medium" onclick="startGame('medium')">MEDIUM<div class="sub">×2.5 MULTIPLIER</div></button>
+    <button class="diff-btn hard" onclick="startGame('hard')">HARD<div class="sub">×5.0 MULTIPLIER</div></button>
+  </div>
+  <div class="menu-bottom">
+    <button class="btn btn-ghost" onclick="showScreen('settingsScreen')">⚙ SETTINGS</button>
+    <button class="btn btn-ghost" onclick="showLeaderboard()">🏆 LEADERBOARD</button>
+    <button class="btn btn-ghost" onclick="logout()">↩ LOGOUT</button>
+  </div>
+</div>
+
+<!-- ════════ SETTINGS SCREEN ════════ -->
+<div class="screen hidden" id="settingsScreen">
+  <div class="settings-box">
+    <h2>⚙ SETTINGS</h2>
+    <div class="setting-row">
+      <div class="setting-label">SENSITIVITY <span id="sensVal">5</span></div>
+      <input type="range" id="sensSl" min="1" max="10" value="5" oninput="updateSetting('sens',this.value)">
+      <div style="font-size:6px;color:#444;font-family:'Rajdhani',sans-serif;">controls how snappy horizontal movement feels</div>
+    </div>
+    <hr class="setting-divider">
+    <div class="setting-row">
+      <div class="setting-label">JUMP POWER <span id="jumpVal">5</span></div>
+      <input type="range" id="jumpSl" min="1" max="10" value="5" oninput="updateSetting('jump',this.value)">
+    </div>
+    <hr class="setting-divider">
+    <div class="setting-row">
+      <div class="setting-label">CAMERA SMOOTHING <span id="camVal">5</span></div>
+      <input type="range" id="camSl" min="1" max="10" value="5" oninput="updateSetting('cam',this.value)">
+    </div>
+    <hr class="setting-divider">
+    <div class="setting-row">
+      <div class="setting-label">PLAYER COLOR</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        ${['#00aaff','#ff6b35','#4CAF50','#E91E63','#FFD700','#9C27B0','#ffffff'].map(c=>`<div onclick="setPlayerColor('${c}')" style="width:24px;height:24px;background:${c};border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color 0.15s;" class="color-swatch" data-color="${c}"></div>`).join('')}
+      </div>
+    </div>
+    <button class="btn btn-orange" style="margin-top:4px;" onclick="showScreen('menuScreen')">← BACK</button>
+  </div>
+</div>
+
+<!-- ════════ LEADERBOARD SCREEN ════════ -->
+<div class="screen hidden" id="lbScreen">
+  <div class="lb-box">
+    <h2>🏆 LEADERBOARD</h2>
+    <div class="lb-tabs">
+      <button class="lb-tab active" onclick="switchLbTab('easy',this)">EASY</button>
+      <button class="lb-tab" onclick="switchLbTab('medium',this)">MEDIUM</button>
+      <button class="lb-tab" onclick="switchLbTab('hard',this)">HARD</button>
+      <button class="lb-tab" onclick="switchLbTab('all',this)">ALL</button>
+    </div>
+    <div id="lbList"></div>
+  </div>
+  <button class="btn btn-ghost" style="margin-top:8px;" onclick="showScreen('menuScreen')">← BACK</button>
+</div>
+
+<!-- ════════ GAME ════════ -->
+<div id="hud" style="display:none;">
+  <div class="hud-item hud-user" id="hudUser">—</div>
+  <div class="hud-item">⏱ <span id="timer">0.0</span>s</div>
+  <div class="hud-item">💀 <span id="deaths">0</span></div>
+  <div class="hud-item">✅ <span id="levelsHud">0</span> lvls</div>
+  <div class="hud-item" id="diffHud" style="color:#FF9800;">—</div>
+</div>
+<div id="gameWrap" style="display:none;">
+  <canvas id="gameCanvas" width="800" height="480"></canvas>
+  <div id="gameOverlay"></div>
+</div>
+
+<div id="controls" style="color:#444;font-size:6px;display:none;margin-top:6px;">
+  ← → / A D &nbsp;|&nbsp; SPACE / W / ↑ jump &nbsp;|&nbsp; double jump! &nbsp;|&nbsp; ESC = menu
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  USER SYSTEM  (localStorage — swap for Cloudflare later)
+// ════════════════════════════════════════════════════════
+// NOTE FOR CLOUDFLARE MIGRATION:
+//   Replace loadDB/saveDB with fetch() calls to your Worker.
+//   Endpoints needed: POST /register, POST /login, POST /score, GET /leaderboard/:diff
+//   Worker uses Cloudflare D1 (SQLite). See README comment at bottom.
+
+let DB = JSON.parse(localStorage.getItem('obby_db') || '{"users":{},"scores":[]}');
+let currentUser = null;
+
+function saveDB(){ localStorage.setItem('obby_db', JSON.stringify(DB)); }
+
+function submitAuth(){
+  const u = document.getElementById('authUser').value.trim();
+  const p = document.getElementById('authPass').value;
+  const err = document.getElementById('authErr');
+  err.textContent='';
+  if(!u||!p){ err.textContent='fill both fields'; return; }
+  if(u.length<2){ err.textContent='username too short'; return; }
+
+  if(authMode==='login'){
+    const user = DB.users[u];
+    if(!user || user.pass !== btoa(p)){ err.textContent='wrong credentials'; return; }
+    currentUser = u;
+    enterMenu();
+  } else {
+    if(DB.users[u]){ err.textContent='username taken'; return; }
+    DB.users[u] = { pass: btoa(p), score:0, levels:0, created: Date.now() };
+    saveDB();
+    currentUser = u;
+    enterMenu();
+  }
+}
+
+function logout(){
+  currentUser=null;
+  document.getElementById('authUser').value='';
+  document.getElementById('authPass').value='';
+  showScreen('authScreen');
+}
+
+function enterMenu(){
+  showScreen('menuScreen');
+  document.getElementById('menuUsername').textContent = currentUser;
+  const u = DB.users[currentUser];
+  document.getElementById('menuScore').textContent = Math.round(u.score);
+  document.getElementById('menuLevels').textContent = u.levels;
+}
+
+let authMode = 'login';
+function toggleAuthMode(){
+  authMode = authMode==='login'?'register':'login';
+  document.getElementById('authTitle').textContent = authMode==='login'?'LOGIN':'REGISTER';
+  document.getElementById('authToggleText').textContent = authMode==='login'?'register here':'back to login';
+  document.getElementById('authErr').textContent='';
+}
+
+document.getElementById('authUser').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('authPass').focus(); });
+document.getElementById('authPass').addEventListener('keydown',e=>{ if(e.key==='Enter') submitAuth(); });
+
+// ────────────────────────────────────────────────────────
+//  SCORING SYSTEM
+//  score = (levels / time_seconds) * 1000 * diffMultiplier
+// ────────────────────────────────────────────────────────
+const DIFF_MULT = { easy:1.0, medium:2.5, hard:5.0 };
+
+function submitScore(levels, timeSec, diff){
+  if(!currentUser || timeSec<=0 || levels<=0) return;
+  const mult = DIFF_MULT[diff];
+  const score = (levels / timeSec) * 1000 * mult;
+
+  const entry = {
+    user: currentUser,
+    score: Math.round(score),
+    levels, time: Math.round(timeSec*10)/10,
+    diff, ts: Date.now()
+  };
+  DB.scores.push(entry);
+
+  // Update user totals (keep best score, accumulate levels)
+  const u = DB.users[currentUser];
+  u.score = Math.max(u.score, entry.score);
+  u.levels += levels;
+  saveDB();
+  return entry;
+}
+
+function getLeaderboard(diff){
+  let scores = [...DB.scores];
+  if(diff!=='all') scores = scores.filter(s=>s.diff===diff);
+  // Best score per user per diff
+  const best = {};
+  scores.forEach(s=>{
+    const k = s.user+'_'+s.diff;
+    if(!best[k]||s.score>best[k].score) best[k]=s;
+  });
+  return Object.values(best).sort((a,b)=>b.score-a.score).slice(0,20);
+}
+
+// ────────────────────────────────────────────────────────
+//  SETTINGS
+// ────────────────────────────────────────────────────────
+const settings = { sens:5, jump:5, cam:5, playerColor:'#00aaff' };
+
+function updateSetting(key, val){
+  settings[key] = parseFloat(val);
+  document.getElementById(key+'Val').textContent = val;
+}
+function setPlayerColor(c){
+  settings.playerColor = c;
+  player.color = c;
+  document.querySelectorAll('.color-swatch').forEach(s=>{
+    s.style.borderColor = s.dataset.color===c ? '#fff' : 'transparent';
+  });
+}
+// Init swatch border
+setTimeout(()=>setPlayerColor(settings.playerColor),50);
+
+// sens → acceleration: range 1-10 maps to 0.35–1.6
+function getSensAccel(){ return 0.35 + (settings.sens-1)*(1.6-0.35)/9; }
+function getJumpVel(){   return -(10.5 + (settings.jump-1)*(3.0)/9); }
+function getCamSmooth(){ return 0.04 + (settings.cam-1)*(0.15)/9; }
+
+// ────────────────────────────────────────────────────────
+//  SCREEN ROUTER
+// ────────────────────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById('hud').style.display='none';
+  document.getElementById('gameWrap').style.display='none';
+  document.getElementById('controls').style.display='none';
+}
+showScreen('authScreen');
+
+function showLeaderboard(){
+  showScreen('lbScreen');
+  renderLb('easy');
+}
+let lbDiff='easy';
+function switchLbTab(diff,el){
+  lbDiff=diff;
+  document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderLb(diff);
+}
+function renderLb(diff){
+  const rows = getLeaderboard(diff);
+  const el = document.getElementById('lbList');
+  if(!rows.length){ el.innerHTML='<div class="lb-empty">no scores yet — be the first!</div>'; return; }
+  const rankClass=['gold','silver','bronze'];
+  el.innerHTML = rows.map((r,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank ${rankClass[i]||''}">${i+1}</div>
+      <div class="lb-name ${r.user===currentUser?'you':''}">${r.user}${r.user===currentUser?' ◀':''}</div>
+      <div class="lb-diff">${r.diff.toUpperCase()}</div>
+      <div class="lb-score">${r.score.toLocaleString()}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  GAME ENGINE
+// ════════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const DIFF_CFG = {
+  easy:   { gapMin:40,gapMax:90,  platMin:80,platMax:160,movingChance:0.18,lavaChance:0.12,bouncyChance:0.08,iceChance:0.05,speed:1.2,segments:14,label:'EASY',  color:'#4CAF50' },
+  medium: { gapMin:60,gapMax:130, platMin:55,platMax:120,movingChance:0.30,lavaChance:0.20,bouncyChance:0.12,iceChance:0.10,speed:1.9,segments:18,label:'MEDIUM',color:'#FF9800' },
+  hard:   { gapMin:85,gapMax:170, platMin:40,platMax:90, movingChance:0.42,lavaChance:0.30,bouncyChance:0.15,iceChance:0.18,speed:2.8,segments:22,label:'HARD',  color:'#f44336' },
+};
+const PLAT_COLORS={ solid:['#4CAF50','#43A047','#66BB6A'],moving:['#FF9800','#FFA726'],bouncy:['#E91E63','#EC407A'],ice:['#80DEEA','#4DD0E1'],lava:['#e53935','#EF5350'] };
+const GRAVITY_BASE=0.52;
+const MAX_SPEED=4.0, FRICTION=0.80;
+
+let difficulty='easy', gameRunning=false;
+let deaths=0, sessionLevels=0, sessionStart=0, elapsed=0;
+let cameraX=0, platforms=[], WORLD_WIDTH=2000, particles=[];
+
+const player={x:60,y:280,w:26,h:34,vx:0,vy:0,onGround:false,jumpsLeft:2,dead:false,color:'#00aaff',eyeDir:1,iceSlide:false};
+
+function resetPlayer(){
+  player.x=60;player.y=260;player.vx=0;player.vy=0;
+  player.onGround=false;player.jumpsLeft=2;player.dead=false;player.iceSlide=false;
+  player.color=settings.playerColor;
+}
+
+// ── Level generator ──────────────────────────────────
+function rng(a,b){return a+Math.random()*(b-a);}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+function generateLevel(diff){
+  const cfg=DIFF_CFG[diff]; const plats=[];
+  plats.push({x:0,y:340,w:180,h:20,color:'#4CAF50',type:'solid'});
+  let curX=180; const baseY=340;
+  for(let i=0;i<cfg.segments;i++){
+    curX+=rng(cfg.gapMin,cfg.gapMax);
+    const w=rng(cfg.platMin,cfg.platMax);
+    const y=Math.max(160,Math.min(380,baseY+rng(-80,60)));
+    const roll=Math.random();
+    let type='solid';
+    if(roll<cfg.lavaChance) type='lava';
+    else if(roll<cfg.lavaChance+cfg.movingChance) type='moving';
+    else if(roll<cfg.lavaChance+cfg.movingChance+cfg.bouncyChance) type='bouncy';
+    else if(roll<cfg.lavaChance+cfg.movingChance+cfg.bouncyChance+cfg.iceChance) type='ice';
+    const pl={x:curX,y,w,h:20,color:pick(PLAT_COLORS[type]||PLAT_COLORS.solid),type};
+    if(type==='moving'){
+      pl.ox=curX;pl.range=rng(40,110);pl.speed=rng(cfg.speed*0.7,cfg.speed*1.3);pl.dir=Math.random()<0.5?1:-1;
+      pl.axis=Math.random()<0.35?'v':'h';
+      if(pl.axis==='v'){pl.oy=y;pl.vrange=rng(30,70);}
+    }
+    plats.push(pl);curX+=w;
+    if(type!=='lava'&&Math.random()<0.15) plats.push({x:curX,y:y+20,w:rng(30,60),h:20,color:'#e53935',type:'lava'});
+  }
+  curX+=rng(80,140);
+  plats.push({x:curX,y:baseY,w:140,h:20,color:'#FFD700',type:'solid',finish:true});
+  WORLD_WIDTH=curX+300;
+  return plats;
+}
+
+// ── Particles ────────────────────────────────────────
+function spawnP(x,y,color,n=12,opts={}){
+  for(let i=0;i<n;i++) particles.push({x,y,vx:(Math.random()-0.5)*(opts.s||7),vy:(Math.random()-0.9)*(opts.u||8),life:1,color,sz:opts.sz||(3+Math.random()*5)});
+}
+
+// ── Input ────────────────────────────────────────────
+const keys={};
+document.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='Escape'&&gameRunning) escapeToMenu();
+  if(gameRunning&&(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')){
+    if(player.jumpsLeft>0){
+      player.vy=getJumpVel();
+      player.jumpsLeft--;
+      spawnP(player.x+player.w/2,player.y+player.h,'rgba(255,255,255,0.5)',5,{s:4,u:5,sz:3});
+    }
+  }
+});
+document.addEventListener('keyup',e=>keys[e.code]=false);
+
+function escapeToMenu(){
+  gameRunning=false;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('hud').style.display='none';
+  document.getElementById('gameWrap').style.display='none';
+  document.getElementById('controls').style.display='none';
+  document.getElementById('gameOverlay').style.display='none';
+  enterMenu();
+}
+
+// ── Start game ───────────────────────────────────────
+function startGame(diff){
+  difficulty=diff;
+  platforms=generateLevel(diff);
+  resetPlayer();
+  cameraX=0;particles=[];
+  deaths=0;sessionLevels=0;
+  sessionStart=Date.now();elapsed=0;
+  gameRunning=true;
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  const hud=document.getElementById('hud');
+  hud.style.display='flex';
+  document.getElementById('gameWrap').style.display='block';
+  document.getElementById('controls').style.display='block';
+  document.getElementById('gameOverlay').style.display='none';
+  document.getElementById('hudUser').textContent=currentUser;
+  document.getElementById('deaths').textContent='0';
+  document.getElementById('levelsHud').textContent='0';
+  const dc=DIFF_CFG[diff];
+  const dh=document.getElementById('diffHud');
+  dh.textContent=dc.label;dh.style.color=dc.color;
+}
+
+// ── Collision ────────────────────────────────────────
+function collides(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
+
+// ── Update ───────────────────────────────────────────
+function update(){
+  if(!gameRunning||player.dead) return;
+  elapsed=(Date.now()-sessionStart)/1000;
+  document.getElementById('timer').textContent=elapsed.toFixed(1);
+
+  platforms.forEach(pl=>{
+    if(pl.type!=='moving') return;
+    if(pl.axis==='v'){pl.y+=pl.speed*pl.dir;if(pl.y>pl.oy+pl.vrange||pl.y<pl.oy-pl.vrange)pl.dir*=-1;}
+    else{pl.x+=pl.speed*pl.dir;if(pl.x>pl.ox+pl.range||pl.x<pl.ox-pl.range)pl.dir*=-1;}
+  });
+
+  const accel=getSensAccel()*(player.iceSlide?0.35:1);
+  const fric=player.iceSlide?0.97:FRICTION;
+  if(keys['ArrowLeft']||keys['KeyA']){player.vx-=accel;player.eyeDir=-1;}
+  if(keys['ArrowRight']||keys['KeyD']){player.vx+=accel;player.eyeDir=1;}
+  player.vx*=fric;
+  if(Math.abs(player.vx)>MAX_SPEED) player.vx=Math.sign(player.vx)*MAX_SPEED;
+
+  player.vy+=GRAVITY_BASE;
+  player.y+=player.vy;
+  player.x+=player.vx;
+  player.onGround=false;player.iceSlide=false;
+
+  const lavaFloor={x:-100,y:460,w:WORLD_WIDTH+200,h:40,type:'lava'};
+  const allPlats=[...platforms,lavaFloor];
+  allPlats.forEach(pl=>{
+    if(!collides(player,pl)) return;
+    if(pl.type==='lava'){die();return;}
+    const ox=Math.min(player.x+player.w,pl.x+pl.w)-Math.max(player.x,pl.x);
+    const oy=Math.min(player.y+player.h,pl.y+pl.h)-Math.max(player.y,pl.y);
+    if(oy<ox){
+      if(player.y+player.h/2<pl.y+pl.h/2){
+        player.y=pl.y-player.h;
+        if(pl.type==='bouncy'){player.vy=getJumpVel()*1.55;player.jumpsLeft=2;spawnP(player.x+player.w/2,player.y+player.h,pick(PLAT_COLORS.bouncy),14,{s:8,u:10});}
+        else{player.vy=0;player.onGround=true;player.jumpsLeft=2;}
+        if(pl.type==='ice') player.iceSlide=true;
+        if(pl.type==='moving'&&pl.axis!=='v') player.vx+=pl.speed*pl.dir*0.35;
+      }else{player.y=pl.y+pl.h;player.vy=Math.abs(player.vy)*0.2;}
+    }else{
+      if(player.x+player.w/2<pl.x+pl.w/2) player.x=pl.x-player.w;
+      else player.x=pl.x+pl.w;
+      player.vx=0;
+    }
+  });
+
+  if(player.x<0){player.x=0;player.vx=0;}
+
+  const finish=platforms.find(p=>p.finish);
+  if(finish&&collides(player,finish)&&player.y+player.h<=finish.y+10) win();
+
+  const smooth=getCamSmooth();
+  cameraX+=(player.x-220-cameraX)*smooth;
+  cameraX=Math.max(0,Math.min(WORLD_WIDTH-800,cameraX));
+
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life-=0.03;p.sz*=0.96;});
+  particles=particles.filter(p=>p.life>0);
+}
+
+function die(){
+  if(player.dead) return;
+  player.dead=true;
+  deaths++;
+  document.getElementById('deaths').textContent=deaths;
+  spawnP(player.x+player.w/2,player.y+player.h/2,'#ff4444',22,{s:9,u:10});
+  setTimeout(()=>{
+    resetPlayer();
+    player.dead=false;
+    platforms=generateLevel(difficulty);
+    cameraX=0;
+  },600);
+}
+
+function win(){
+  sessionLevels++;
+  document.getElementById('levelsHud').textContent=sessionLevels;
+  const entry=submitScore(sessionLevels, elapsed, difficulty);
+  const scoreNum=entry?entry.score:0;
+  spawnP(player.x+player.w/2,player.y,'#FFD700',30,{s:12,u:14,sz:7});
+  const ov=document.getElementById('gameOverlay');
+  ov.style.display='flex';
+  const cfg=DIFF_CFG[difficulty];
+  ov.innerHTML=`
+    <h2 style="color:var(--gold)">🏆 LEVEL COMPLETE!</h2>
+    <div class="score-reveal">+${scoreNum.toLocaleString()} pts</div>
+    <p style="font-size:7px;color:#888">${elapsed.toFixed(1)}s · ${sessionLevels} level${sessionLevels>1?'s':''} · ${cfg.label}</p>
+    <p style="font-size:7px;color:#555">formula: (${sessionLevels} ÷ ${elapsed.toFixed(1)}s) × 1000 × ${cfg.label==='EASY'?'1.0':cfg.label==='MEDIUM'?'2.5':'5.0'}</p>
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button class="btn btn-orange" onclick="nextLevel()">NEXT LEVEL →</button>
+      <button class="btn btn-ghost" onclick="escapeToMenu()">↩ MENU</button>
+    </div>`;
+}
+
+function nextLevel(){
+  document.getElementById('gameOverlay').style.display='none';
+  platforms=generateLevel(difficulty);
+  resetPlayer();
+  cameraX=0;
+  particles=[];
+}
+
+// ── Draw ─────────────────────────────────────────────
+function rRect(x,y,w,h,c,r=4){ctx.fillStyle=c;ctx.beginPath();ctx.roundRect(x,y,w,h,[r]);ctx.fill();}
+
+function drawBg(){
+  const g=ctx.createLinearGradient(0,0,0,480);
+  g.addColorStop(0,'#090916');g.addColorStop(1,'#0d0d20');
+  ctx.fillStyle=g;ctx.fillRect(0,0,800,480);
+  for(let i=0;i<60;i++){
+    const sx=((i*197+31)%800-(cameraX*0.04)%800+800)%800;
+    const sy=(i*293+17)%300;
+    const t=Math.sin(Date.now()*0.0015+i)*0.35+0.55;
+    ctx.globalAlpha=t*0.5;ctx.fillStyle='#fff';
+    ctx.fillRect(sx,sy,i%5===0?2:1,i%5===0?2:1);
+  }
+  ctx.globalAlpha=1;
+  ctx.fillStyle='rgba(255,255,255,0.025)';
+  for(let i=0;i<6;i++){
+    const cx=((i*320-cameraX*0.12)%1000+1000)%1000-100;
+    ctx.fillRect(cx,80+i*22,100,16);ctx.fillRect(cx+15,70+i*22,70,13);
+  }
+}
+
+function drawPlat(pl){
+  const sx=pl.x-cameraX;
+  if(sx>840||sx+pl.w<-10) return;
+  if(pl.type==='lava'){
+    ctx.fillStyle=pl.color||'#e53935';ctx.fillRect(sx,pl.y,pl.w,pl.h);
+    ctx.fillStyle='#FF7043';
+    for(let i=0;i<pl.w;i+=20){const w=Math.sin(Date.now()*0.004+i*0.3)*4;ctx.fillRect(sx+i,pl.y+w,14,5);}
+    ctx.fillStyle='rgba(255,80,0,0.1)';ctx.fillRect(sx,pl.y-8,pl.w,8);
+    return;
+  }
+  if(pl.type==='ice'){
+    rRect(sx,pl.y,pl.w,pl.h,pl.color,5);
+    ctx.fillStyle='rgba(255,255,255,0.32)';ctx.fillRect(sx+4,pl.y+2,pl.w-8,4);
+    ctx.fillStyle='rgba(255,255,255,0.09)';ctx.fillRect(sx+4,pl.y+8,pl.w-8,3);
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    for(let i=12;i<pl.w-10;i+=22){ctx.fillRect(sx+i,pl.y+11,2,7);ctx.fillRect(sx+i-3,pl.y+14,8,2);}
+    return;
+  }
+  if(pl.type==='bouncy'){
+    rRect(sx,pl.y,pl.w,pl.h,pl.color,5);
+    ctx.fillStyle='rgba(255,255,255,0.22)';ctx.fillRect(sx+4,pl.y+2,pl.w-8,4);
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    for(let i=10;i<pl.w-8;i+=13){ctx.beginPath();ctx.arc(sx+i,pl.y+11,2.5,0,Math.PI*2);ctx.fill();}
+    return;
+  }
+  ctx.fillStyle='rgba(0,0,0,0.15)';ctx.fillRect(sx+3,pl.y+pl.h,pl.w-6,4);
+  rRect(sx,pl.y,pl.w,pl.h,pl.color,5);
+  ctx.fillStyle='rgba(255,255,255,0.18)';ctx.fillRect(sx+4,pl.y+2,pl.w-8,4);
+  ctx.fillStyle='rgba(255,255,255,0.09)';
+  for(let i=9;i<pl.w-8;i+=15){ctx.beginPath();ctx.arc(sx+i,pl.y+4,3,0,Math.PI*2);ctx.fill();}
+  if(pl.finish){
+    ctx.fillStyle=`rgba(255,215,0,${0.25+Math.sin(Date.now()*0.005)*0.15})`;
+    ctx.fillRect(sx+2,pl.y+2,pl.w-4,pl.h-4);
+  }
+}
+
+function drawFlag(){
+  const f=platforms.find(p=>p.finish);if(!f) return;
+  const sx=f.x+f.w/2-cameraX;if(sx<-30||sx>860) return;
+  ctx.fillStyle='#777';ctx.fillRect(sx-2,f.y-90,4,90);
+  const wv=Math.sin(Date.now()*0.005)*6;
+  ctx.fillStyle='#FFD700';ctx.beginPath();
+  ctx.moveTo(sx+2,f.y-90);ctx.lineTo(sx+38+wv,f.y-78);ctx.lineTo(sx+2,f.y-64);ctx.closePath();ctx.fill();
+  ctx.fillStyle=`rgba(255,215,0,${0.08+Math.sin(Date.now()*0.005)*0.04})`;
+  ctx.fillRect(sx-20,f.y-100,70,100);
+}
+
+function drawPlayer(){
+  if(player.dead) return;
+  const sx=player.x-cameraX;
+  ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(sx+2,player.y+player.h,player.w-4,4);
+  rRect(sx,player.y,player.w,player.h,player.color,6);
+  ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(sx+4,player.y+4,8,6);
+  ctx.fillStyle='#fff';ctx.fillRect(sx+5,player.y+7,7,7);ctx.fillRect(sx+14,player.y+7,7,7);
+  ctx.fillStyle='#111';const ed=player.eyeDir>0?2:0;
+  ctx.fillRect(sx+6+ed,player.y+9,3,4);ctx.fillRect(sx+15+ed,player.y+9,3,4);
+  if(player.iceSlide){ctx.globalAlpha=0.3;rRect(sx,player.y,player.w,player.h,'#80DEEA',6);ctx.globalAlpha=1;}
+  const la=player.onGround?Math.sin(Date.now()*0.012)*5:0;
+  ctx.fillStyle='#005fa3';
+  ctx.fillRect(sx+3,player.y+player.h-1,9,7+la);ctx.fillRect(sx+13,player.y+player.h-1,9,7-la);
+}
+
+function drawParticles(){
+  particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;
+    const s=Math.max(0,p.sz);ctx.fillRect(p.x-cameraX-s/2,p.y-s/2,s,s);
+  });ctx.globalAlpha=1;
+}
+
+function drawLegend(){
+  const items=[{c:'#FF9800',l:'MOVING'},{c:'#E91E63',l:'BOUNCY'},{c:'#80DEEA',l:'ICE'},{c:'#e53935',l:'LAVA'}];
+  let lx=8;
+  items.forEach(it=>{
+    ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(lx-2,452,58,20);
+    ctx.fillStyle=it.c;ctx.fillRect(lx,456,10,10);
+    ctx.fillStyle='#888';ctx.font='5px "Press Start 2P"';ctx.fillText(it.l,lx+14,466);
+    lx+=70;
+  });
+  // ESC hint
+  ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(748,452,48,20);
+  ctx.fillStyle='#555';ctx.font='5px "Press Start 2P"';ctx.fillText('ESC=MENU',750,465);
+}
+
+function loop(){
+  update();
+  if(gameRunning){
+    ctx.clearRect(0,0,800,480);
+    drawBg();platforms.forEach(drawPlat);drawFlag();drawParticles();drawPlayer();drawLegend();
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+
+/*
+══════════════════════════════════════════════════════════════
+  CLOUDFLARE MIGRATION GUIDE
+══════════════════════════════════════════════════════════════
+  When ready to go live, replace the localStorage DB with:
+
+  1) Cloudflare Worker (wrangler init obby-api)
+
+  // worker.js
+  export default {
+    async fetch(req, env) {
+      const url = new URL(req.url);
+      if (url.pathname === '/register') { ... env.DB.prepare(...) }
+      if (url.pathname === '/login')    { ... }
+      if (url.pathname === '/score')    { ... }
+      if (url.pathname === '/leaderboard/:diff') { ... }
+    }
+  }
+
+  2) D1 schema:
+  CREATE TABLE users (username TEXT PRIMARY KEY, pass TEXT, score INT DEFAULT 0, levels INT DEFAULT 0);
+  CREATE TABLE scores (id INTEGER PRIMARY KEY, username TEXT, score INT, levels INT, time REAL, diff TEXT, ts INT);
+
+  3) Replace submitAuth(), submitScore(), getLeaderboard() in this file
+     with fetch('/register'), fetch('/score'), fetch('/leaderboard/easy') etc.
+
+  Cost: FREE up to 100k requests/day on Cloudflare free tier.
+══════════════════════════════════════════════════════════════
+*/
+</script>
+</body>
+</html>
